@@ -1,5 +1,5 @@
-## @namespace Geo::OGC
-# @brief The simple feature geometries
+#** @file Geometry.pm
+# @brief Simple feature geometries
 #
 # The classes and methods in the Geo::OGC:: namespace should conform
 # to the OGC implementation specification (currently 06-103r3) for
@@ -15,39 +15,22 @@
 # document.
 # @note Most of the methods for testing spatial relations and the
 # methods that support spatial analysis are not yet implemented.
+#*
 
+#** @class Geo::OGC::Geometry
+# @brief A root class for geospatial features.
+#
+#*
 package Geo::OGC::Geometry;
 
-=pod
-
-=head1 NAME
-
-Geo::OGC::Geometry - Simple feature geometry classes
-
-The classes and methods in the Geo::OGC:: namespace should conform to
-the OGC (opengeospatial.org) implementation specification (currently
-06-103r3) for Geographic Information - Simple feature access.
-
-This module is documented using the doxygen format. Documentation in
-HTML and in other formats can be generated with <a
-href="http://www.stack.nl/~dimitri/doxygen/">doxygen</a> and <a
-href="http://www.bigsister.ch/doxygenfilter/">perl doxygen filter</a>.
-
-The latest version of the documentation is automatically generated at
-http://geoinformatics.aalto.fi/doc/Geoinformatica/html/
-
-=cut
-
 use strict;
-use Carp;
-
-# Force to "C" locale
 use POSIX;
-POSIX::setlocale( &POSIX::LC_NUMERIC, "C" );
+use Carp;
 
 BEGIN {
     use Exporter 'import';
     use vars qw /$SNAP_DISTANCE_SQR/;
+    POSIX::setlocale( &POSIX::LC_NUMERIC, "C" ); # Force to "C" locale
     our %EXPORT_TAGS = ( 'all' => [ qw( &ccw &intersect &distance_point_line_sqr 
 					$SNAP_DISTANCE_SQR ) ] );
     our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -96,8 +79,9 @@ sub copy {
     $clone->{Precision} = $self->{Precision} if exists $self->{Precision};
 }
 
-## @cmethod Geo::OGC::Geometry parse_wkt($Text)
+#** @method Geo::OGC::Geometry parse_wkt($Text)
 # @brief parse well known text and construct respective geometry
+#*
 sub parse_wkt {
     my $text = shift;
     my $self;
@@ -523,7 +507,7 @@ use Geo::OGC::Geometry qw/:all/;
 
 our @ISA = qw( Geo::OGC::Geometry );
 
-## @cmethod new(%params)
+## @method new(%params)
 # @brief Construct a new point
 # @param params The following syntaxes are allowed:
 # @code
@@ -2686,3 +2670,24 @@ sub as_text {
 sub ElementType {
     return 'LineString';
 }
+
+=head1 NAME
+
+Geo::OGC::Geometry - Simple feature geometry classes
+
+The classes and methods in the Geo::OGC:: namespace should conform to
+the OGC (opengeospatial.org) implementation specification (currently
+06-103r3) for Geographic Information - Simple feature access.
+
+This module is documented using the doxygen format. Documentation in
+HTML and in other formats can be generated with <a
+href="http://www.stack.nl/~dimitri/doxygen/">doxygen</a> and <a
+href="http://search.cpan.org/~jordan/Doxygen-Filter-Perl">perl doxygen filter</a>.
+
+The latest version of the documentation is automatically generated at
+http://ajolma.net/Geoinformatica/doc/
+
+=cut
+
+1;
+__END__
