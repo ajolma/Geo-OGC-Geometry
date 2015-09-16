@@ -1,26 +1,35 @@
-#** @file Geometry.pm
-# @brief Simple feature geometries
-#
-# The classes and methods in the Geo::OGC:: namespace should conform
-# to the OGC implementation specification (currently 06-103r3) for
-# Geographic Information - Simple feature access.
-# @note Some of the brief descriptions in this document are taken
-# verbatim from <a
-# href="http://www.opengeospatial.org/standards/sfa">the OGC
-# specification (OGC 06-103r3 Version 1.2.0)</a>. <a
-# href="http://www.opengeospatial.org/ogc/document">Copyright (c) 2006
-# Open Geospatial Consortium, Inc. All Rights Reserved.</a>
-# @note Calling a method that is not yet implemented causes an
-# exception. The status of implementation is not always shown in this
-# document.
-# @note Most of the methods for testing spatial relations and the
-# methods that support spatial analysis are not yet implemented.
-#*
+=pod
 
-#** @class Geo::OGC::Geometry
-# @brief A root class for geospatial features.
-#
-#*
+=head1 NAME
+
+Geo::OGC::Geometry - Perl extension for OGC simple feature geometries
+
+=head1 SYNOPSIS
+
+    use Geo::OGC::Geometry;
+
+    my $point = Geo::OGC::Point->new(Text => 'POINT 1 1');
+
+=head1 DESCRIPTION
+
+OGC simple feature geometries is a class hierarchy for geographic
+information. This module conforms to the document OGC 06-103r4, which
+is the current document describing the standard. The document is
+available from L<http://www.opengeospatial.org/>.
+
+This module is currently mostly an interface and storage classes and
+does not contain implementations of most of the methods for testing
+spatial relations etc.
+
+=head1 CLASSES
+
+=head2 Geo::OGC::Geometry
+
+Geo::OGC::Geometry is the root class and it represents an arbitrary
+geospatial geometry.
+
+=cut
+
 package Geo::OGC::Geometry;
 
 use strict;
@@ -38,21 +47,39 @@ BEGIN {
     $SNAP_DISTANCE_SQR = 1E-6;
 }
 
-## @cmethod Geo::OGC::Geometry new(%params)
-# @brief Create a new and initialized object.
-#
-# @param params A set of named parameters (the subclasses may add new
-# known parameters):
-# - <i>Text</i> A well-known text, constructs an object of class the
-# text defines.
-# - <i>SRID</i> Sets the SRID attribute of the object, default is -1.
-# - <i>Precision</i> If specified, has the effect that numeric
-# comparisons in the Equals method is is preceded with a rounding
-# operation (using sprintf "%.pe", where p is the Precision-1, i.e the
-# number of meaningful numbers is Precision). Affects also AsText.
-#
-# This method should be called eventually by all constructors. Blesses
-# the object into the correct class and calls init.
+=pod
+
+=over
+
+=item new(%params)
+
+Create a new Geometry object or a new object belonging to a concrete
+subclass of Geometry if initialization data is given.
+
+%param is a hash containing named parameters. The keywords are
+(subclasses of Geometry may add new keywords):
+
+=over
+
+=item Text
+
+A well-known text to initialize an object of a concrete class.
+
+=item SRID
+
+Sets the Spatial Reference System ID of the object, default is -1.
+
+=item Precision
+
+If specified, has the effect that numeric comparisons in the Equals
+method is is preceded with a rounding operation (using sprintf "%.pe",
+where p is the Precision-1, i.e the number of meaningful numbers is
+Precision). Affects also AsText.
+
+=back
+
+=cut
+
 sub new {
     my($package, %params) = @_;
     return parse_wkt($params{Text}) if exists $params{Text};
@@ -62,16 +89,17 @@ sub new {
     return $self;
 }
 
-## @method void init(%params)
-# @brief Override in new classes but call $self->SUPER::init(%params);
+# methods beginning with lower case letter are private
+# and thus not in pod
+
+# Override in new classes but call $self->SUPER::init(%params);
 sub init {
     my($self, %params) = @_;
     $self->{SRID} = exists $params{SRID} ? $params{SRID} : -1;
     $self->{Precision} = $params{Precision}-1 if exists $params{Precision};
 }
 
-## @method void copy($clone)
-# @brief Copies the attributes of this object to the other object,
+# Copies the attributes of this object to the other object,
 # which is a newly created object of same class.
 sub copy {
     my($self, $clone) = @_;
@@ -79,9 +107,7 @@ sub copy {
     $clone->{Precision} = $self->{Precision} if exists $self->{Precision};
 }
 
-#** @method Geo::OGC::Geometry parse_wkt($Text)
-# @brief parse well known text and construct respective geometry
-#*
+# parse well known text and construct respective geometry
 sub parse_wkt {
     my $text = shift;
     my $self;
@@ -186,9 +212,7 @@ sub parse_wkt {
     return $self;
 }
 
-## @fn $ccw($x0, $y0, $x1, $y1, $x2, $y2)
-# @brief counterclockwise from Sedgewick: Algorithms in C
-# @return -1, 0, or 1
+# counterclockwise from Sedgewick: Algorithms in C
 sub ccw {
     my($x0, $y0, $x1, $y1, $x2, $y2) = @_;
     my $dx1 = $x1 - $x0; 
@@ -202,8 +226,7 @@ sub ccw {
     return 0;
 }
 
-## @fn $intersect($x11, $y11, $x12, $y12, $x21, $y21, $x22, $y22)
-# @brief Test intersection of two lines from Sedgewick: Algorithms in C
+# Test intersection of two lines from Sedgewick: Algorithms in C
 sub intersect {
     my($x11, $y11, $x12, $y12, $x21, $y21, $x22, $y22) = @_;
     return ((ccw($x11, $y11, $x12, $y12, $x21, $y21)
@@ -225,8 +248,7 @@ sub intersection_point {
     return ($x, $y);
 }
 
-## @fn $distance_point_line_sqr($x, $y, $x1, $y1, $x2, $y2)
-# @brief Compute the distance of a point to a line.
+# Compute the distance of a point to a line.
 sub distance_point_line_sqr {
     my($x, $y, $x1, $y1, $x2, $y2) = @_;
     my $dx = $x2-$x1;
@@ -244,8 +266,14 @@ sub distance_point_line_sqr {
     }
 }
 
-## @method Geo::OGC::Geometry Clone()
-# @brief Clones this object, i.e., creates a spatially exact copy.
+=pod
+
+=item Clone()
+
+Clones this object, i.e., creates a spatially exact copy.
+
+=cut
+
 sub Clone {
     my($self) = @_;
     my $clone = Geo::OGC::Geometry::new($self);
@@ -253,236 +281,456 @@ sub Clone {
     return $clone;
 }
 
-## @method $Precision($Precision)
-# @brief Sets or gets the precision
-# @note Not in the specification
+=pod
+
+=item Precision($precision)
+
+Sets or gets the precision.
+
+Not in the specification.
+
+=cut
+
 sub Precision {
     my($self, $Precision) = @_;
     defined $Precision ? 
 	$self->{Precision} = $Precision-1 : $self->{Precision}+1;
 }
 
-## @method $Dimension()
-# @brief The dimension of this geometric object. In non-homogeneous
-# collections, this will return the largest topological dimension of
-# the contained objects.
-# @return 2 or 3
+=pod
+
+=item Dimension()
+
+The dimension (2 or 3) of this geometric object. In non-homogeneous
+collections, this will return the largest topological dimension of the
+contained objects.
+
+=cut
+
 sub Dimension {
     my($self) = @_;
     croak "Dimension method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $GeometryType()
-# @brief Returns the name of the class of this geometric object.
+=pod
+
+=item GeometryType()
+
+Returns the geometry type of this object.
+
+=cut
+
 sub GeometryType {
     my($self) = @_;
     croak "GeometryType method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $SRID($SRID)
-# @brief Returns (or sets) the Spatial Reference System ID for this
-# geometric object.
-# @param SRID [optional] The new SRID if setting it.
+=pod
+
+=item SRID($srid)
+
+Get or set Spatial Reference System ID for this object.
+
+=cut
+
 sub SRID {
     my($self, $SRID) = @_;
     defined $SRID ? 
 	$self->{SRID} = $SRID : $self->{SRID};
 }
 
-## @method Geo::OGC::Polygon Envelope()
-# @brief The minimum bounding box for this Geometry.
-# @note This library returns always the envelope as a ring [(minx,
-# miny), (maxx, miny), (maxx, maxy), (minx, maxy), (minx, miny)]
+=pod
+
+=item Envelope()
+
+Compute the minimum bounding box for this geometry as a ring.
+
+=cut
+
 sub Envelope {
     my($self) = @_;
     croak "Envelope method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $as_text($force_parens, $include_tag)
-# @brief A helper method used by AsText
+# A helper method used by AsText
 sub as_text {
     my($self, $force_parens, $include_tag) = @_;
     croak "as_text method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $AsText()
-# @brief Returns this object in Well-known Text Representation of Geometry
+=pod
+
+=item AsText()
+
+This object in Well-known Text representation.
+
+=cut
+
 sub AsText {
     my($self) = @_;
     return uc($self->GeometryType).' '.'EMPTY' if $self->IsEmpty;
     return $self->as_text(1, 1);
 }
 
-## @method $AsBinary()
-# @brief Returns this object in Well-known Binary Representation of Geometry
-# @note Not implemented yet.
+=pod
+
+=item AsBinary()
+
+This object in Well-known Binary representation.
+
+=cut
+
 sub AsBinary {
     my($self) = @_;
     croak "AsBinary method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $IsEmpty()
-# @brief Returns true if this object is empty, i.e. contains no points
-# or no data.
+=pod
+
+=item IsEmpty()
+
+Returns true if this object is empty, i.e. contains no points.
+
+=cut
+
 sub IsEmpty {
     my($self) = @_;
     croak "IsEmpty method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $IsSimple()
-# @brief Returns true if this geometric object has no anomalous
-# geometric points, such as self intersection or self tangency.
+=pod
+
+=item IsSimple()
+
+Returns true if this geometric object has no anomalous geometric
+points, such as self intersection or self tangency.
+
+=cut
+
 sub IsSimple {
     my($self) = @_;
     croak "IsSimple method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $Is3D()
-# @brief Returns true if this geometric object has z coordinate values.
+=pod
+
+=item Is3D()
+
+Returns true if this geometric object has z coordinate values.
+
+=cut
+
 sub Is3D {
     my($self) = @_;
     croak "Is3D method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $IsMeasured()
-# @brief Returns true if this geometric object has m coordinate
-# values.
+=pod
+
+=item IsMeasured()
+
+Returns true if this object has m coordinate values.
+
+=cut
+
 sub IsMeasured {
     my($self) = @_;
     croak "IsMeasured method for class ".ref($self)." is not implemented yet";
 }
 
-## @method Geo::OGC::Geometry Boundary()
-# @brief Returns the closure of the combinatorial boundary of this
-# geometric object.
-# @note Not implemented yet.
+=pod
+
+=item Boundary()
+
+Returns the closure of the combinatorial boundary of this object.
+
+=cut
+
 sub Boundary {
     my($self) = @_;
     croak "Boundary method for class ".ref($self)." is not implemented yet";
 }
 
-## @method $Equals($geom)
-# @brief Returns true if this geometric object is "spatially equal" to
-# the another geometry.
+=pod
+
+=item Equals($geometry)
+
+Returns true if this object is "spatially equal" to the other
+geometry.
+
+=cut
+
 sub Equals {
     my($self, $geom) = @_;
     croak "Equals method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item Disjoint($geometry)
+
+Returns true if this object is "spatially disjoint" from the other geometry.
+
+=cut
 
 sub Disjoint {
     my($self, $geom) = @_;
     croak "Disjoint method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Intersects($geometry)
+
+Returns true if this object "spatially intersects" the other geometry.
+
+=cut
+
 sub Intersects {
     my($self, $geom) = @_;
     croak "Intersects method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item Touches($geometry)
+
+Returns true if this object "spatially touches" the other geometry.
+
+=cut
 
 sub Touches {
     my($self, $geom) = @_;
     croak "Touches method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Crosses($geometry)
+
+Returns true if this object "spatially crosses" the other geometry.
+
+=cut
+
 sub Crosses {
     my($self, $geom) = @_;
     croak "Crosses method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item Within($geometry)
+
+Returns true if this object is "spatially within" the other geometry.
+
+=cut
 
 sub Within {
     my($self, $geom) = @_;
     croak "Within method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Contains($geometry)
+
+Returns true if this object "spatially contains" the other geometry.
+
+=cut
+
 sub Contains {
     my($self, $geom) = @_;
     croak "Contains method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item Overlaps($geometry)
+
+Returns true if this object "spatially overlaps" the other geometry.
+
+=cut
 
 sub Overlaps {
     my($self, $geom) = @_;
     croak "Overlaps method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Relate($geometry, $intersectionPatternMatrix)
+
+Returns true if this object is spatially related to the other geometry
+by testing for intersections between the interior, boundary and
+exterior of the two geometric objects as specified by the values in
+the intersectionPatternMatrix.  This returns FALSE if all the tested
+intersections are empty except exterior (this) intersect exterior
+(another).
+
+=cut
+
 sub Relate {
     my($self, $geom, $int_pat) = @_;
     croak "Relate method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item LocateAlong($mValue)
+
+Returns a derived geometry collection value that matches the
+specified m coordinate value.
+
+=cut
 
 sub LocateAlong {
     my($self, $mValue) = @_;
     croak "LocateAlong method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item LocateBetween($mStart, $mEnd)
+
+Returns a derived geometry collection value that matches the specified
+range of m coordinate values inclusively.
+
+=cut
+
 sub LocateBetween {
     my($self, $mStart, $mEnd) = @_;
     croak "LocateBetween method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item Distance($geometry)
+
+Returns the shortest distance between any two points between this object and the other geometry.
+
+=cut
 
 sub Distance {
     my($self, $geom) = @_;
     croak "Distance method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Buffer($distance)
+
+Returns a surface whose points are closer than or at the given distance from this object.
+
+=cut
+
 sub Buffer {
     my($self, $distance) = @_;
     croak "Buffer method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item ConvexHull()
+
+Returns a convex hull of this object.
+
+=cut
 
 sub ConvexHull {
     my($self) = @_;
     croak "ConvexHull method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Intersection($geometry)
+
+Returns a point set intersection of this object with the other geometry.
+
+=cut
+
 sub Intersection {
     my($self, $geom) = @_;
     croak "Intersection method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item Union($geometry)
+
+Returns a point set union of this object with the other geometry.
+
+=cut
 
 sub Union {
     my($self, $geom) = @_;
     croak "Union method for class ".ref($self)." is not implemented yet";
 }
 
+=pod
+
+=item Difference($geometry)
+
+Returns a point set difference of this object with the other geometry.
+
+=cut
+
 sub Difference {
     my($self, $geom) = @_;
     croak "Difference method for class ".ref($self)." is not implemented yet";
 }
+
+=pod
+
+=item SymDifference($geometry)
+
+Returns a point set symmetric difference of this object with the other geometry.
+
+=cut
 
 sub SymDifference {
     my($self, $geom) = @_;
     croak "SymDifference method for class ".ref($self)." is not implemented yet";
 }
 
-## @method MakeCollection()
-# @brief Creates a collection which contains this geometry
-# @note Not in the specification
+=pod
+
+=item MakeCollection()
+
+Creates a collection which contains this geometry.
+
+=cut
+
 sub MakeCollection {
     my($self) = @_;
     croak "MakeCollection method for class ".ref($self)." is not implemented";
 }
 
-## @method ApplyTransformation($transf)
-# @param transf A point transformation method which will be applied
-# for all points in the geometry as:
-# @code
-# ($new_x, $new_y, $new_z) = $transf->($x, $y, $z)
-# @endcode
-# @note Not in the specification
+=pod
+
+=item ApplyTransformation($transformation)
+
+transf = A point transformation method which will be applied for all
+the points in the geometry as:
+
+    ($new_x, $new_y, $new_z) = $transformation->($x, $y, $z)
+
+Not in the specification.
+
+=cut
+
 sub ApplyTransformation {
     my($self, $transf) = @_;
     croak "ApplyTransformation method for class ".ref($self)." is not implemented";
 }
 
-## @method LastPolygon()
-# @brief Returns last (latest added) polygon or undef
-sub LastPolygon {
-    return undef;
-}
+=pod
 
-#
-#    SpatialReferenceSystem
-#
+=back
+
+=head2 Geo::OGC::SpatialReferenceSystem
+
+=cut
 
 package Geo::OGC::SpatialReferenceSystem;
 
@@ -495,9 +743,13 @@ sub new {
     bless $self => (ref($package) or $package);
 }
 
-#
-#    Point
-#
+=pod 
+
+=head2 Geo::OGC::Point
+
+A 0-dimensional geometric object.
+
+=cut
 
 package Geo::OGC::Point;
 
@@ -507,24 +759,30 @@ use Geo::OGC::Geometry qw/:all/;
 
 our @ISA = qw( Geo::OGC::Geometry );
 
-## @method new(%params)
-# @brief Construct a new point
-# @param params The following syntaxes are allowed:
-# @code
-# $point = Geo::OGC::Point->new($x, $y);
-# $point = Geo::OGC::Point->new($x, $y, $z);
-# $point = Geo::OGC::Point->new(point => [$x, $y]);
-# $point = Geo::OGC::Point->new(point => [$x, $y, $z]);
-# $point = Geo::OGC::Point->new(point => [$x, $y, $z, $m]);
-# $point = Geo::OGC::Point->new(pointz => [$x, $y, $z]);
-# $point = Geo::OGC::Point->new(pointz => [$x, $y, $z, $m]);
-# $point = Geo::OGC::Point->new(pointm => [$x, $y, $m]);
-# $point = Geo::OGC::Point->new(pointm => [$x, $y, $z, $m]);
-# $point = Geo::OGC::Point->new(pointzm => [$x, $y, $z, $m]);
-# $point = Geo::OGC::Point->new(X => $x, Y => $y);
-# $point = Geo::OGC::Point->new(X => $x, Y => $y, Z => $z);
-# $point = Geo::OGC::Point->new(X => $x, Y => $y, Z => $z, M => $m);
-# @endcode
+=pod
+
+=over
+
+=item new()
+
+A new point object can be created (besides using WKT) with
+
+    $point = Geo::OGC::Point->new($x, $y);
+    $point = Geo::OGC::Point->new($x, $y, $z);
+    $point = Geo::OGC::Point->new(point => [$x, $y]);
+    $point = Geo::OGC::Point->new(point => [$x, $y, $z]);
+    $point = Geo::OGC::Point->new(point => [$x, $y, $z, $m]);
+    $point = Geo::OGC::Point->new(pointz => [$x, $y, $z]);
+    $point = Geo::OGC::Point->new(pointz => [$x, $y, $z, $m]);
+    $point = Geo::OGC::Point->new(pointm => [$x, $y, $m]);
+    $point = Geo::OGC::Point->new(pointm => [$x, $y, $z, $m]);
+    $point = Geo::OGC::Point->new(pointzm => [$x, $y, $z, $m]);
+    $point = Geo::OGC::Point->new(X => $x, Y => $y);
+    $point = Geo::OGC::Point->new(X => $x, Y => $y, Z => $z);
+    $point = Geo::OGC::Point->new(X => $x, Y => $y, Z => $z, M => $m);
+
+=cut
+
 sub new {
     my $package = shift;
     my %params;
@@ -602,9 +860,8 @@ sub copy {
     }
 }
 
-## @method point()
-# @brief Return a reference to an anonymous array that contains the point data.
-# @note Note that there is no difference between [x,y,z] and [x,y,m]
+# Return a reference to an anonymous array that contains the point data.
+# Note that there is no difference between [x,y,z] and [x,y,m]
 sub point {
     my($self) = @_;
     my @point = ($self->{X}, $self->{Y});
@@ -632,8 +889,7 @@ sub IsEmpty {
     return !(exists $self->{X});
 }
 
-## @method IsSimple()
-# @brief A point is always simple.
+# A point is always simple.
 sub IsSimple {
     my($self) = @_;
     return 1;
@@ -666,22 +922,32 @@ sub Y {
 	$self->{Y} = $Y : $self->{Y};
 }
 
-## @method Z($Z)
-# @brief sets or gets the z coordinate
-# @param Z [optional]
-# @note setting is not in the specification
-# @note returns undef if z does not exist or if it exists but is undefined
+=pod
+
+=item Z()
+
+Get or set the z coordinate.
+
+Setting is not in the specification.
+
+=cut
+
 sub Z {
     my($self, $Z) = @_;
     defined $Z ? 
 	$self->{Z} = $Z : (exists $self->{Z} ? $self->{Z} : undef);
 }
 
-## @method M($M)
-# @brief sets or gets the measure
-# @param M [optional]
-# @note setting is not in the specification
-# @note returns undef if M does not exist or if it exists but is undefined
+=pod
+
+=item M()
+
+Get or set the measure.
+
+Setting is not in the specification.
+
+=cut
+
 sub M {
     my($self, $M) = @_;
     defined $M ? 
@@ -857,14 +1123,17 @@ sub AddVertex {
 sub DeleteVertex {
 }
 
-#
-#    Curve
-#
+=pod 
+
+=back
+
+=head2 Geo::OGC::Curve
+
+A 1-dimensional geometric object.
+
+=cut
 
 package Geo::OGC::Curve;
-# @brief 1-dimensional geometric object
-#
-# Curve is implemented as a sequence of Points.
 
 use strict;
 use Carp;
@@ -925,11 +1194,21 @@ sub as_text {
     return $text;
 }
 
-## @method AddPoint($point, $i)
-# @param point A Point object
-# @param i [optional] The location in the sequence (1..N+1) where to add the Point. 
-# Adds to the end (N+1) by default.
-# @note not in the specification
+=pod
+
+=over
+
+=item AddPoint($point, $i)
+
+Adds a point to the end (N+1) of the curve by default.
+
+point = A Point object
+i [optional] = The location in the sequence (1..N+1) where to add the Point. 
+
+Not in the specification.
+
+=cut
+
 sub AddPoint {
     my($self, $point, $i) = @_;
     croak 'usage: Curve->AddPoint($point) '
@@ -943,9 +1222,18 @@ sub AddPoint {
     }
 }
 
-## @method DeletePoint($i)
-# @param i The location in the sequence (1..N) from where to delete the Point. 
-# @note not in the specification
+=pod
+
+=item DeletePoint($i)
+
+Delete a point from the curve.
+
+i = The location in the sequence (1..N) from where to delete the Point.
+
+Not in the specification.
+
+=cut
+
 sub DeletePoint {
     my($self, $i) = @_;
     my $points = $self->{Points};
@@ -964,19 +1252,32 @@ sub EndPoint {
     return $points->[$#$points] if @$points;
 }
 
-## @method NumPoints()
-# @brief Return the number of points in the sequence.
-#
-# @note Returns all points in a list context.
+=pod
+
+=item NumPoints()
+
+Return the number of points in the sequence.
+
+=cut
+
 sub NumPoints {
     my($self) = @_;
-    @{$self->{Points}};
+    scalar(@{$self->{Points}});
 }
 
-## @method PointN($N, $point)
-# @param N A location in the sequence
-# @note The first point has the index 1 as OGC SF SQL conformance test uses 1-based indexing. 
-# @param point [optional] A Point object, if defined sets the point to index N
+=pod
+
+=item PointN($N, $point)
+
+Get or set the point of the sequence.
+
+N = A location in the sequence.
+point [optional] = A Point object, if defined sets the point to index N.
+
+The first point has the index 1 as OGC SF SQL conformance test uses 1-based indexing. 
+
+=cut
+
 sub PointN {
     my($self, $N, $point) = @_;
     my $points = $self->{Points};
@@ -1005,18 +1306,31 @@ sub IsClosed {
     $self->StartPoint()->Equals($self->EndPoint());
 }
 
-## @method Close()
-# @brief Close the curve by adding the first point also as the last point.
-# @note Not in the specification.
+=pod
+
+=item Close()
+
+Close the curve by adding the first point also as the last point.
+
+Not in the specification.
+
+=cut
+
 sub Close {
     my($self) = @_;
     push @{$self->{Points}}, $self->{Points}[0];
 }
 
-## @method IsRing($upgrade)
-# @brief Tests whether this curve is a ring, i.e., closed and simple
-# @param upgrade [optional, not in the specification] Upgrades this
-# curve into a Ring if this really could be a ring
+=pod
+
+=item IsRing($upgrade)
+
+Tests whether this curve is a ring, i.e., closed and simple.
+
+upgrade [optional, not in the specification] = Upgrades this curve into a Ring if this really could be a ring.
+
+=cut
+
 sub IsRing {
     my($self, $upgrade) = @_;
     my $ret = ($self->IsClosed and $self->IsSimple);
@@ -1053,9 +1367,16 @@ sub ApplyTransformation {
     }
 }
 
-## @method Reverse()
-# @brief Reverse the order of the points in the sequence.
-# @note Not in the specification.
+=pod
+
+=item Reverse()
+
+Reverse the order of the points in the sequence.
+
+Not in the specification.
+
+=cut
+
 sub Reverse {
     my($self) = @_;
     @{$self->{Points}} = reverse @{$self->{Points}};
@@ -1115,9 +1436,13 @@ sub DeleteVertex {
     splice @{$self->{Points}}, $i, 1;
 }
 
-#
-#    LineString
-#
+=pod
+
+=back
+
+=head2 Geo::OGC::LineString
+
+=cut
 
 package Geo::OGC::LineString;
 
@@ -1228,9 +1553,18 @@ sub Envelope {
     return $r;
 }
 
-## @method Length()
-# @brief The length of this LineString in its associated spatial reference.
-# @note Currently computed as a simple euclidean distance.
+=pod
+
+=over
+
+=item Length()
+
+The length of this LineString in its associated spatial reference.
+
+Currently computed as a simple euclidean distance.
+
+=cut
+
 sub Length {
     my($self) = @_;
     my $l = 0;
@@ -1533,9 +1867,7 @@ sub simplify_part {
     }
 }
 
-## @method simplify($tolerance)
-# @brief Simplifies the linestring using Douglas-Peucker
-# @return The simpliefied linestring
+# Simplifies the linestring using Douglas-Peucker
 sub simplify {
     my($self, $tolerance) = @_;
     my $simple = Geo::OGC::LineString->new;
@@ -1545,9 +1877,13 @@ sub simplify {
     return $simple;
 }
 
-#
-#    Line
-#
+=pod
+
+=back
+
+=head2 Geo::OGC::Line
+
+=cut
 
 package Geo::OGC::Line;
 
@@ -1566,9 +1902,11 @@ sub GeometryType {
     return 'Line';
 }
 
-#
-#    LinearRing
-#
+=pod
+
+=head2 Geo::OGC::LinearRing
+
+=cut
 
 package Geo::OGC::LinearRing;
 
@@ -1588,12 +1926,22 @@ sub GeometryType {
     return 'LinearRing';
 }
 
-## @method IsPointIn(Geo::OGC::Point point)
-# @brief Tests whether the given point is within the ring
-# @note uses the pnpoly algorithm from
-# http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-# @note Assumes a simple closed ring
-# @note may or may not return true if the point is on the border
+=pod
+
+=over
+
+=item IsPointIn($point)
+
+Tests whether the given point is within the ring.
+
+Uses the pnpoly algorithm from L<http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html>.
+
+Assumes a simple closed ring. May or may not return true if the point is on the border.
+
+Not in the specification.
+
+=cut
+
 sub IsPointIn {
     my($self, $point) = @_;
     my($x, $y) = ($point->{X}, $point->{Y});
@@ -1626,12 +1974,20 @@ sub IsPointStricktlyOut {
     return 0;
 }
 
-## @method Area()
-# @brief Computes the area of the ring.
-# @note Not in the specification.
-# @note Computed as a simple euclidean area.
-# @note Assumes a simple closed ring
-# @return area or negative area if the sense of the rotation of the ring is clockwise
+=pod
+
+=item Area()
+
+Compute the area of the ring. The area is computed as a simple euclidean area.
+
+Not in the specification.
+
+Assumes a simple closed ring
+
+Returns the area as a negative number if the sense of the rotation of the ring is clockwise.
+
+=cut
+
 sub Area {
     my($self) = @_;
     my $area = 0;
@@ -1662,10 +2018,7 @@ sub Centroid {
     return Geo::OGC::Point->new($x, $y);
 }
 
-## @method IsCCW()
-# @brief Returns true if the points in this ring are arranged counterclockwise.
-# @note Not in the specification.
-# @note Assumes a simple closed ring.
+# Returns true if the points in this ring are arranged counterclockwise. Assumes a simple closed ring.
 sub IsCCW {
     my($self) = @_;
     # find the northernmost point
@@ -1685,16 +2038,21 @@ sub IsCCW {
 	       $self->{Points}[$n]{X}, $self->{Points}[$n]{Y}) == 1;
 }
 
-## @method Rotate()
-# @brief Makes clockwise from counterclockwise and vice versa.
+# Makes clockwise from counterclockwise and vice versa.
 sub Rotate {
     my($self) = @_;
     @{$self->{Points}} = reverse @{$self->{Points}};
 }
 
-#
-#    Surface
-#
+=pod
+
+=back
+
+=head2 Geo::OGC::Surface
+
+A 2-dimensional geometric object.
+
+=cut
 
 package Geo::OGC::Surface;
 
@@ -1739,9 +2097,11 @@ sub MakeCollection {
     return $coll;
 }
 
-#
-#    Polygon
-#
+=pod
+
+=head2 Geo::OGC::Polygon
+
+=cut
 
 package Geo::OGC::Polygon;
 
@@ -1782,9 +2142,7 @@ sub GeometryType {
     return 'Polygon';
 }
 
-## @method Assert()
-# @brief Test the rules that define valid polygons
-# @note Not in the specification.
+# Test the rules that define valid polygons.
 sub Assert {
     my($self) = @_;
 
@@ -1890,13 +2248,19 @@ sub Envelope {
     return $self->{ExteriorRing}->Envelope;
 }
 
-## @method NumInteriorRing()
-# @brief Return the number of interior rings in the polygon.
-#
-# @note Returns all interior rings in a list context.
+=pod
+
+=over
+
+=item NumInteriorRing()
+
+Return the number of interior rings in the polygon.
+
+=cut
+
 sub NumInteriorRing {
     my($self) = @_;
-    @{$self->{InteriorRings}};
+    scalar(@{$self->{InteriorRings}});
 }
 
 sub InteriorRingN {
@@ -2106,9 +2470,13 @@ sub LastPolygon {
     return $self;
 }
 
-#
-#    Triangle
-#
+=pod
+
+=back
+
+=head2 Geo::OGC::Triangle
+
+=cut
 
 package Geo::OGC::Triangle;
 
@@ -2127,9 +2495,11 @@ sub GeometryType {
     return 'Triangle';
 }
 
-#
-#    PolyhedralSurface
-#
+=pod
+
+=head2 Geo::OGC::PolyhedralSurface
+
+=cut
 
 package Geo::OGC::PolyhedralSurface;
 
@@ -2234,9 +2604,11 @@ sub as_text {
     return $text;
 }
 
-#
-#    TIN
-#
+=pod
+
+=head2 Geo::OGC::TIN
+
+=cut
 
 package Geo::OGC::TIN;
 
@@ -2255,9 +2627,11 @@ sub GeometryType {
     return 'TIN';
 }
 
-#
-#    GeometryCollection
-#
+=pod
+
+=head2 Geo::OGC::GeometryCollection
+
+=cut
 
 package Geo::OGC::GeometryCollection;
 
@@ -2349,19 +2723,29 @@ sub AddGeometry {
     }
 }
 
-## @method NumGeometries()
-# @brief Return the number of geometries in the collection.
-#
-# @note Returns all geometries in a list context.
+=pod
+
+=over
+
+=item NumGeometries()
+
+Return the number of geometries in this collection.
+
+=cut
+
 sub NumGeometries {
     my($self) = @_;
     @{$self->{Geometries}};
 }
 
-## @method GeometryN(N)
-# @brief Return the Nth geometry from the collection 
-# (the index of the first geometry is 1).
-#
+=pod
+
+=item GeometryN($n)
+
+Return the Nth geometry from the collection (the index of the first geometry is 1).
+
+=cut
+
 sub GeometryN {
     my($self, $N, $geometry) = @_;
     my $geometries = $self->{Geometries};
@@ -2390,7 +2774,7 @@ sub Envelope {
     return $r;
 }
 
-# @note Assumes the order is the same.
+# Assumes the order is the same.
 sub Equals {
     my($self, $geom) = @_;
     return 0 unless $geom->isa('Geo::OGC::GeometryCollection');
@@ -2475,8 +2859,6 @@ sub DeleteVertex {
     $self->{Geometries}[$i]->DeleteVertex(@_);
 }
 
-## @method LastPolygon()
-# @brief Returns last polygon or undef
 sub LastPolygon {
     my($self) = @_;
     for (my $i = $#{$self->{Geometries}}; $i >= 0; $i--) {
@@ -2485,9 +2867,13 @@ sub LastPolygon {
     }
 }
 
-#
-#    MultiSurface
-#
+=pod
+
+=back
+
+=head2 Geo::OGC::MultiSurface
+
+=cut
 
 package Geo::OGC::MultiSurface;
 
@@ -2525,9 +2911,11 @@ sub PointOnSurface {
     croak "PointOnSurface method for class ".ref($self)." is not implemented yet";
 }
 
-#
-#    MultiCurve
-#
+=pod
+
+=head2 Geo::OGC::MultiCurve
+
+=cut
 
 package Geo::OGC::MultiCurve;
 
@@ -2550,9 +2938,11 @@ sub ElementType {
     return 'Curve';
 }
 
-#
-#    MultiPoint
-#
+=pod
+
+=head2 Geo::OGC::MultiPoint
+
+=cut
 
 package Geo::OGC::MultiPoint;
 
@@ -2603,9 +2993,11 @@ sub Boundary {
     return Geo::OGC::GeometryCollection->new();
 }
 
-#
-#    MultiPolygon
-#
+=pod
+
+=head2 Geo::OGC::MultiPolygon
+
+=cut
 
 package Geo::OGC::MultiPolygon;
 
@@ -2637,9 +3029,27 @@ sub ElementType {
     return 'Polygon';
 }
 
-#
-#    MultiLineString
-#
+=pod
+
+=over
+
+=item LastPolygon()
+
+Returns last (latest added) polygon or undef.
+
+=cut
+
+sub LastPolygon {
+    return undef;
+}
+
+=pod
+
+=back
+
+=head2 Geo::OGC::MultiLineString
+
+=cut
 
 package Geo::OGC::MultiLineString;
 
@@ -2671,21 +3081,24 @@ sub ElementType {
     return 'LineString';
 }
 
-=head1 NAME
+=pod
 
-Geo::OGC::Geometry - Simple feature geometry classes
+=head1 ACKNOWLEDGEMENTS
 
-The classes and methods in the Geo::OGC:: namespace should conform to
-the OGC (opengeospatial.org) implementation specification (currently
-06-103r3) for Geographic Information - Simple feature access.
+The OpenGIS (r) Implementation Standard for Geographic information -
+Simple feature access - Part 1: Common architecture was heavily used
+in preparation of this module.
 
-This module is documented using the doxygen format. Documentation in
-HTML and in other formats can be generated with <a
-href="http://www.stack.nl/~dimitri/doxygen/">doxygen</a> and <a
-href="http://search.cpan.org/~jordan/Doxygen-Filter-Perl">perl doxygen filter</a>.
+=head1 AUTHOR
 
-The latest version of the documentation is automatically generated at
-http://ajolma.net/Geoinformatica/doc/
+Ari Jolma L<https://github.com/ajolma>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (c) 2008- Ari Jolma
+
+This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl 5 itself.
 
 =cut
 

@@ -12,17 +12,17 @@ INSTALLATION
 
 To install, unzip and untar the archive. In the directory created type
 
-perl Makefile.pl
-make
-make test
-make install
+    perl Makefile.pl
+    make
+    make test
+    make install
 
 Documentation is in the module file and will be added onto
 perllocal.pod as usual.
 
-COPYRIGHT AND LICENCE
+COPYRIGHT AND LICENSE
 
 Copyright (C) 2008- by Ari Jolma
 
 This library is free software; you can redistribute it and/or modify
-it under the terms of Artistic License 2.0 (included as LICENCE).
+it under the terms of Artistic License 2.0 (included as LICENSE).
