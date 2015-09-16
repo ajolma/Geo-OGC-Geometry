@@ -3089,6 +3089,10 @@ The OpenGIS (r) Implementation Standard for Geographic information -
 Simple feature access - Part 1: Common architecture was heavily used
 in preparation of this module.
 
+=head1 REPOSITORY
+
+L<https://github.com/ajolma/Geo-OGC-Geometry>
+
 =head1 AUTHOR
 
 Ari Jolma L<https://github.com/ajolma>
