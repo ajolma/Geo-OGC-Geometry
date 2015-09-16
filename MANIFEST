@@ -1,6 +1,6 @@
 LICENSE
 MANIFEST
-README
+README.md
 lib/Geo/OGC/Geometry.pm
 Makefile.PL
 t/00.t
